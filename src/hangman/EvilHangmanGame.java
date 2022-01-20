@@ -12,18 +12,14 @@ public class EvilHangmanGame implements IEvilHangmanGame{
     public static void main(String[] args) throws EmptyDictionaryException, IOException {
         EvilHangmanGame eh = new EvilHangmanGame();
         File fBoi = new File("small.txt");
-        eh.startGame(fBoi, 3);
+        eh.startGame(fBoi, 6);
         System.out.println(eh.words);
 
-        System.out.println(eh.findMatches("a[^a][^a]"));
-        for(int i = 0; i < 3*3-1; i++){  //correct way to gen all possible regex's
-            System.out.println(eh.mask(i, 3, 'a'));
-        }
+        System.out.println(Arrays.toString(EvilHangmanGame.genPatterns('a', 4)));
     }
 
-    //TODO: make both private
-    public Set<String> words;
-    public SortedSet<Character> guessedLetters;
+    private Set<String> words;
+    private final SortedSet<Character> guessedLetters;
 
     public EvilHangmanGame() {
         this.words = new HashSet<>();
@@ -47,8 +43,7 @@ public class EvilHangmanGame implements IEvilHangmanGame{
         return null;
     }
 
-    //TODO: make private
-    public Set<String> findMatches(String pattern){
+    private Set<String> findMatches(String pattern){
         Set<String> results = new HashSet<>();
         Pattern curPattern;
         curPattern = Pattern.compile(pattern);
@@ -60,35 +55,23 @@ public class EvilHangmanGame implements IEvilHangmanGame{
         return results;
     }
 
-    //TODO: genPatterns
-    public String[] genPatterns(char letter, int wordLength){
-        /*
-        i = 0;
-        do a mask over each digit in i_2
-        if 1, select char
-        else exclude char
-         */
-
-
-        return null;
+    private static String[] genPatterns(char letter, int wordLength){
+        final int length = (int)Math.pow(2, wordLength);
+        String[] patterns = new String[length];
+        for(int i = 0; i < length; i++){
+            patterns[i] = EvilHangmanGame.mask(i, wordLength, letter);
+        }
+        return patterns;
     }
 
-    //TODO: make private
-
-    /**
-     *
-     * @param i mask index; see genPatterns for clarity
-     * @param wordLength
-     * @return regex for the given mask index
-     */
-    public String mask(int i, int wordLength, char letter){
+    private static String mask(int i, int wordLength, char letter){
         int index = 0;
-        String out = "";
+        StringBuilder out = new StringBuilder();
         for(int l = 0; l < wordLength; l++){
-            out = out + (i%2 == 0 ? "[^"+letter+"]" : letter);
+            out.append(i % 2 == 0 ? "[^" + letter + "]" : letter);
             i = i >> 1;
         }
-        return out;
+        return out.toString();
     }
 
     @Override
