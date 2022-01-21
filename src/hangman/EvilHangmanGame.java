@@ -10,12 +10,13 @@ import java.util.regex.Matcher;
 public class EvilHangmanGame implements IEvilHangmanGame{
 
     public static void main(String[] args) throws EmptyDictionaryException, IOException {
+        final int wordLength = 6;
+
         EvilHangmanGame eh = new EvilHangmanGame();
         File fBoi = new File("small.txt");
-        eh.startGame(fBoi, 6);
-        System.out.println(eh.words);
+        eh.startGame(fBoi, wordLength);
+        System.out.println(Arrays.toString(EvilHangmanGame.treeTraversal(3, 'a')));
 
-        System.out.println(Arrays.toString(EvilHangmanGame.genPatterns('a', 4)));
     }
 
     private Set<String> words;
@@ -43,6 +44,33 @@ public class EvilHangmanGame implements IEvilHangmanGame{
         return null;
     }
 
+    private String[] geLargestPartition(char letter, int wordLength){
+        String[][] partitions = getPartitions(letter, wordLength);
+        System.out.println(Arrays.deepToString(partitions)); //todo: remove
+        int maxLen = -1;
+        int maxI = -1;
+        for(int i = partitions.length - 1; i >= 0; i--){
+            if(partitions[i].length >= maxLen){
+                maxI = i;
+                maxLen = partitions[i].length;
+            }
+        }
+
+        return partitions[maxI];
+    }
+
+    private String[][] getPartitions(char letter, int wordLength){
+        int length = (int)Math.pow(2, wordLength);
+        String[][] out = new String[length][];
+        int i = 0;
+        for(String pattern : EvilHangmanGame.genPatterns(letter, wordLength)){
+            Set<String> matches = findMatches(pattern);
+            out[i] = matches.toArray(new String[0]);
+            i++;
+        }
+        return out;
+    }
+
     private Set<String> findMatches(String pattern){
         Set<String> results = new HashSet<>();
         Pattern curPattern;
@@ -58,8 +86,14 @@ public class EvilHangmanGame implements IEvilHangmanGame{
     private static String[] genPatterns(char letter, int wordLength){
         final int length = (int)Math.pow(2, wordLength);
         String[] patterns = new String[length];
-        for(int i = 0; i < length; i++){
-            patterns[i] = EvilHangmanGame.mask(i, wordLength, letter);
+        int index = 0;
+        for(int bitIndex = 0; bitIndex < wordLength; bitIndex++) {
+            for (int i = 0; i < length; i++) {
+                if(bitCount(i) == bitIndex) {
+                    patterns[index] = EvilHangmanGame.mask(i, wordLength, letter);
+                    index++;
+                }
+            }
         }
         return patterns;
     }
@@ -68,10 +102,49 @@ public class EvilHangmanGame implements IEvilHangmanGame{
         int index = 0;
         StringBuilder out = new StringBuilder();
         for(int l = 0; l < wordLength; l++){
-            out.append(i % 2 == 0 ? "[^" + letter + "]" : letter);
+            out.insert(0, (i % 2 == 0 ? "[^" + letter + "]" : letter));
             i = i >> 1;
         }
         return out.toString();
+    }
+    private static String mask(boolean[] i, char letter){
+        StringBuilder out = new StringBuilder();
+        for(boolean digit : i){
+            out.insert(0, (digit ? letter : "[^"+letter+"]" )); //true means we have the char at that spot
+        }
+        return out.toString();
+    }
+
+    private static String[] treeTraversal(int wordLength, char letter){
+        int length = (int)Math.pow(2, wordLength);
+        String[] out = new String[length];
+        int outIndex = 0;
+        Queue<StructTreeNode> queue = new ArrayDeque<>();
+        StructTreeNode blankStr = new StructTreeNode(wordLength, 0);
+        queue.add(blankStr);
+        while(!queue.isEmpty()){
+            StructTreeNode top = queue.remove();
+            out[outIndex] = mask(top.o, letter);
+            outIndex++;
+            for(int i = top.i; i < wordLength; i++){
+                boolean[] o = top.o.clone();
+                o[i] = true;
+                queue.add(new StructTreeNode(o, i+1));
+            }
+        }
+
+        return out;
+    }
+
+    private static int bitCount(int n){
+        int count = 0;
+        while(n != 0){
+            if(n%2 == 1){
+                count++;
+            }
+            n = n >> 1;
+        }
+        return count;
     }
 
     @Override
