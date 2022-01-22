@@ -5,30 +5,36 @@ import java.io.IOException;
 import java.util.*;
 
 import java.util.regex.Pattern;
-import java.util.regex.Matcher;
 
 public class EvilHangmanGame implements IEvilHangmanGame{
 
-    public static void main(String[] args) throws EmptyDictionaryException, IOException {
-        final int wordLength = 6;
+    public static void main(String[] args) throws EmptyDictionaryException, IOException, GuessAlreadyMadeException {
+        final int wordLength = 7;
 
         EvilHangmanGame eh = new EvilHangmanGame();
         File fBoi = new File("small.txt");
         eh.startGame(fBoi, wordLength);
-        System.out.println(Arrays.toString(EvilHangmanGame.treeTraversal(3, 'a')));
+        System.out.println(eh.makeGuess('a'));
+        System.out.println(eh.makeGuess('e'));
+        System.out.println(eh.makeGuess('i'));
+        System.out.println(eh.makeGuess('o'));
 
     }
 
     private Set<String> words;
     private final SortedSet<Character> guessedLetters;
+    private int wordLength;
 
     public EvilHangmanGame() {
         this.words = new HashSet<>();
         this.guessedLetters = new TreeSet<>();
+        wordLength = 0;
     }
 
+    //todo: add word selection / win detection
     @Override
     public void startGame(File dictionary, int wordLength) throws IOException, EmptyDictionaryException {
+        this.wordLength = wordLength;
         Scanner scanner = new Scanner(dictionary);
         while(scanner.hasNext()){
             String word = scanner.next();
@@ -36,17 +42,26 @@ public class EvilHangmanGame implements IEvilHangmanGame{
                 words.add(word);
             }
         }
+        if(words.isEmpty()){
+            throw new EmptyDictionaryException();
+        }
         scanner.close();
     }
 
     @Override
     public Set<String> makeGuess(char guess) throws GuessAlreadyMadeException {
-        return null;
+        guess = Character.toLowerCase(guess);
+        if(guessedLetters.contains(guess)){
+            throw new GuessAlreadyMadeException();
+        }
+        guessedLetters.add(guess);
+        Set<String> out = getLargestPartition(guess);
+        words = new HashSet<>(out);
+        return out;
     }
 
-    private String[] geLargestPartition(char letter, int wordLength){
-        String[][] partitions = getPartitions(letter, wordLength);
-        System.out.println(Arrays.deepToString(partitions)); //todo: remove
+    private Set<String> getLargestPartition(char letter){
+        String[][] partitions = getPartitions(letter);
         int maxLen = -1;
         int maxI = -1;
         for(int i = partitions.length - 1; i >= 0; i--){
@@ -56,14 +71,14 @@ public class EvilHangmanGame implements IEvilHangmanGame{
             }
         }
 
-        return partitions[maxI];
+        return new HashSet<String>(List.of(partitions[maxI]));
     }
 
-    private String[][] getPartitions(char letter, int wordLength){
+    private String[][] getPartitions(char letter){
         int length = (int)Math.pow(2, wordLength);
         String[][] out = new String[length][];
         int i = 0;
-        for(String pattern : EvilHangmanGame.genPatterns(letter, wordLength)){
+        for(String pattern : treeTraversal(letter)){
             Set<String> matches = findMatches(pattern);
             out[i] = matches.toArray(new String[0]);
             i++;
@@ -83,30 +98,6 @@ public class EvilHangmanGame implements IEvilHangmanGame{
         return results;
     }
 
-    private static String[] genPatterns(char letter, int wordLength){
-        final int length = (int)Math.pow(2, wordLength);
-        String[] patterns = new String[length];
-        int index = 0;
-        for(int bitIndex = 0; bitIndex < wordLength; bitIndex++) {
-            for (int i = 0; i < length; i++) {
-                if(bitCount(i) == bitIndex) {
-                    patterns[index] = EvilHangmanGame.mask(i, wordLength, letter);
-                    index++;
-                }
-            }
-        }
-        return patterns;
-    }
-
-    private static String mask(int i, int wordLength, char letter){
-        int index = 0;
-        StringBuilder out = new StringBuilder();
-        for(int l = 0; l < wordLength; l++){
-            out.insert(0, (i % 2 == 0 ? "[^" + letter + "]" : letter));
-            i = i >> 1;
-        }
-        return out.toString();
-    }
     private static String mask(boolean[] i, char letter){
         StringBuilder out = new StringBuilder();
         for(boolean digit : i){
@@ -115,36 +106,23 @@ public class EvilHangmanGame implements IEvilHangmanGame{
         return out.toString();
     }
 
-    private static String[] treeTraversal(int wordLength, char letter){
-        int length = (int)Math.pow(2, wordLength);
-        String[] out = new String[length];
+    private String[] treeTraversal(char letter){
+        String[] out = new String[(int)Math.pow(2, wordLength)];
         int outIndex = 0;
         Queue<StructTreeNode> queue = new ArrayDeque<>();
-        StructTreeNode blankStr = new StructTreeNode(wordLength, 0);
-        queue.add(blankStr);
+        queue.add(new StructTreeNode(new boolean[wordLength], 0));
         while(!queue.isEmpty()){
-            StructTreeNode top = queue.remove();
+            StructTreeNode top = queue.remove(); //remove top and visit node
             out[outIndex] = mask(top.o, letter);
             outIndex++;
-            for(int i = top.i; i < wordLength; i++){
+            for(int i = top.i; i < wordLength; i++){ //add each child to the queue
                 boolean[] o = top.o.clone();
-                o[i] = true;
-                queue.add(new StructTreeNode(o, i+1));
+                o[i] = true; //child generation
+                queue.add(new StructTreeNode(o, i+1)); //child generation cont.
             }
         }
 
         return out;
-    }
-
-    private static int bitCount(int n){
-        int count = 0;
-        while(n != 0){
-            if(n%2 == 1){
-                count++;
-            }
-            n = n >> 1;
-        }
-        return count;
     }
 
     @Override
