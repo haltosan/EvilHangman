@@ -32,7 +32,7 @@ public class EvilHangman { //evilHangman dictFile wordLen guessMax
             System.out.println("Here is your word so far: " + evilHangmanGame.getPatterns());
             System.out.print("> ");
             String guess = input.next();
-            char guessLetter = guess.charAt(0);
+            char guessLetter = Character.toLowerCase(guess.charAt(0));
             if(guessLetter < 'a' || guessLetter > 'z'){
                 System.out.println("Please input [a-z]{1}\n");
                 continue;
