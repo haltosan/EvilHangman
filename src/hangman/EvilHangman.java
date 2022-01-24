@@ -1,7 +1,6 @@
 package hangman;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Scanner;
 
@@ -45,12 +44,14 @@ public class EvilHangman { //evilHangman dictFile wordLen guessMax
             catch (GuessAlreadyMadeException exception){
                 System.out.println("Guess already made");
             }
+            System.out.println(evilHangmanGame.getLastLettersGuessed());
             String isGameDone = evilHangmanGame.isGameDone();
             if(isGameDone != null){
                 System.out.println("You won. Here's the word.");
                 System.out.println(isGameDone);
                 System.exit(0);
             }
+            System.out.println();
         }
         System.out.println("You lost! This was the word.");
         System.out.println(evilHangmanGame.endGame());

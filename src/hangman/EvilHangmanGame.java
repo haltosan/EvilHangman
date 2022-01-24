@@ -85,7 +85,15 @@ public class EvilHangmanGame implements IEvilHangmanGame{
                 maxLen = partitions[i].length;
             }
         }
-        patterns.add(this.curPatterns[maxI]);
+        String winningPattern = this.curPatterns[maxI];
+        int caretCount = 0;
+        for(int patterIndex = 0; patterIndex < winningPattern.length(); patterIndex++){
+            if(winningPattern.charAt(patterIndex) == '^'){
+                caretCount++;
+            }
+        }
+        this.lastLettersGuessed = wordLength - caretCount;
+        patterns.add(winningPattern);
         return new HashSet<>(List.of(partitions[maxI]));
     }
 
@@ -166,6 +174,13 @@ public class EvilHangmanGame implements IEvilHangmanGame{
         }
 
         return Arrays.toString(word);
+    }
+
+    public String getLastLettersGuessed(){
+        if(lastLettersGuessed == 0){
+            return "Sorry, letter not found";
+        }
+        return lastLettersGuessed + " letter(s) found";
     }
 
     @Override
