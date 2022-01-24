@@ -5,11 +5,12 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Scanner;
 
-public class EvilHangman {
+public class EvilHangman { //evilHangman dictFile wordLen guessMax
 
     public static void main(String[] args) {
         EvilHangmanGame evilHangmanGame = new EvilHangmanGame();
-        File fileBoi = new File(args[0]);
+        String fileName = "small.txt";
+        File fileBoi = new File(fileName/*args[0]*/);
         int wordLength = Integer.parseInt(args[1]);
         try {
             evilHangmanGame.startGame(fileBoi, wordLength);
@@ -27,17 +28,32 @@ public class EvilHangman {
 
         Scanner input = new Scanner(System.in);
         while(guesses > 0){
+            System.out.println("You have guessed " + evilHangmanGame.getGuessedLetters());
             System.out.println("You have " + guesses + " guesses left");
+            System.out.println("Here is your word so far: " + evilHangmanGame.getPatterns());
             System.out.print("> ");
             String guess = input.next();
+            char guessLetter = guess.charAt(0);
+            if(guessLetter < 'a' || guessLetter > 'z'){
+                System.out.println("Please input [a-z]{1}\n");
+                continue;
+            }
             try {
-                System.out.println(evilHangmanGame.makeGuess(guess.charAt(0))); //todo: allow the pattern to pass up somehow so we can show the user
+                evilHangmanGame.makeGuess(guessLetter);
                 guesses--;
             }
             catch (GuessAlreadyMadeException exception){
                 System.out.println("Guess already made");
             }
+            String isGameDone = evilHangmanGame.isGameDone();
+            if(isGameDone != null){
+                System.out.println("You won. Here's the word.");
+                System.out.println(isGameDone);
+                System.exit(0);
+            }
         }
+        System.out.println("You lost! This was the word.");
+        System.out.println(evilHangmanGame.endGame());
     }
 
 }

@@ -8,30 +8,20 @@ import java.util.regex.Pattern;
 
 public class EvilHangmanGame implements IEvilHangmanGame{
 
-    public static void main(String[] args) throws EmptyDictionaryException, IOException, GuessAlreadyMadeException {
-        final int wordLength = 7;
-
-        EvilHangmanGame eh = new EvilHangmanGame();
-        File fBoi = new File("small.txt");
-        eh.startGame(fBoi, wordLength);
-        System.out.println(eh.makeGuess('a'));
-        System.out.println(eh.makeGuess('e'));
-        System.out.println(eh.makeGuess('i'));
-        System.out.println(eh.makeGuess('o'));
-
-    }
-
-    private Set<String> words;
+    private HashSet<String> words;
     private final SortedSet<Character> guessedLetters;
+    private final HashSet<String> patterns;
+    private String[] curPatterns;
     private int wordLength;
+    private int lastLettersGuessed;
 
     public EvilHangmanGame() {
         this.words = new HashSet<>();
         this.guessedLetters = new TreeSet<>();
+        this.patterns = new HashSet<>();
         wordLength = 0;
     }
 
-    //todo: add word selection / win detection
     @Override
     public void startGame(File dictionary, int wordLength) throws IOException, EmptyDictionaryException {
         this.wordLength = wordLength;
@@ -57,7 +47,32 @@ public class EvilHangmanGame implements IEvilHangmanGame{
         guessedLetters.add(guess);
         Set<String> out = getLargestPartition(guess);
         words = new HashSet<>(out);
+
         return out;
+    }
+
+    public String isGameDone(){
+        if(words.size() > 1){
+            return null;
+        }
+        int letterCount = 0;
+        for(String pattern : patterns){
+            int caretCount = 0;
+            for(int i = 0; i < pattern.length(); i++){
+                if(pattern.charAt(i) == '^'){
+                    caretCount++;
+                }
+            }
+            letterCount += wordLength - caretCount;
+        }
+        if(letterCount >= wordLength){
+            return words.toString();
+        }
+        return null;
+    }
+
+    public String endGame(){
+        return words.iterator().next();
     }
 
     private Set<String> getLargestPartition(char letter){
@@ -70,17 +85,19 @@ public class EvilHangmanGame implements IEvilHangmanGame{
                 maxLen = partitions[i].length;
             }
         }
-
-        return new HashSet<String>(List.of(partitions[maxI]));
+        patterns.add(this.curPatterns[maxI]);
+        return new HashSet<>(List.of(partitions[maxI]));
     }
 
     private String[][] getPartitions(char letter){
         int length = (int)Math.pow(2, wordLength);
         String[][] out = new String[length][];
+        this.curPatterns = new String[length];
         int i = 0;
         for(String pattern : treeTraversal(letter)){
             Set<String> matches = findMatches(pattern);
             out[i] = matches.toArray(new String[0]);
+            curPatterns[i] = pattern;
             i++;
         }
         return out;
@@ -123,6 +140,32 @@ public class EvilHangmanGame implements IEvilHangmanGame{
         }
 
         return out;
+    }
+
+    public String getPatterns(){
+        //System.out.println("gp words:" + words.toString());
+        char[] word = new char[wordLength];
+        for(String pattern : patterns){
+            int patternIndex = 0;
+            for(int i = 0; i < wordLength; i++){
+                if(pattern.charAt(patternIndex) == '['){
+                    patternIndex += 4; //len("[.^]")
+                }
+                else if(pattern.charAt(patternIndex) == '^'){
+                    patternIndex += 2;
+                }
+                else if(pattern.charAt(patternIndex) == ']'){
+                    patternIndex += 1;
+                }
+                else{
+                    //System.out.println("gp pattern:" + pattern);
+                    word[i] =  pattern.charAt(patternIndex); //we found the letter and need to insert to final word
+                    patternIndex += 1;
+                }
+            }
+        }
+
+        return Arrays.toString(word);
     }
 
     @Override
