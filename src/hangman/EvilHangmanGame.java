@@ -76,13 +76,13 @@ public class EvilHangmanGame implements IEvilHangmanGame{
     }
 
     private Set<String> getLargestPartition(char letter){
-        String[][] partitions = getPartitions(letter);
+        TreeSet<String>[] partitions = getPartitions(letter);
         int maxLen = -1;
         int maxI = -1;
         for(int i = partitions.length - 1; i >= 0; i--){
-            if(partitions[i].length >= maxLen){
+            if(partitions[i].size() >= maxLen){
                 maxI = i;
-                maxLen = partitions[i].length;
+                maxLen = partitions[i].size();
             }
         }
         String winningPattern = this.curPatterns[maxI];
@@ -94,25 +94,24 @@ public class EvilHangmanGame implements IEvilHangmanGame{
         }
         this.lastLettersGuessed = wordLength - caretCount;
         patterns.add(winningPattern);
-        return new HashSet<>(List.of(partitions[maxI]));
+        return partitions[maxI];
     }
 
-    private String[][] getPartitions(char letter){
+    private TreeSet<String>[] getPartitions(char letter){
         int length = (int)Math.pow(2, wordLength);
-        String[][] out = new String[length][];
+        TreeSet<String>[] out = new TreeSet[length];
         this.curPatterns = new String[length];
         int i = 0;
         for(String pattern : treeTraversal(letter)){
-            Set<String> matches = findMatches(pattern);
-            out[i] = matches.toArray(new String[0]);
+            out[i] = findMatches(pattern);
             curPatterns[i] = pattern;
             i++;
         }
         return out;
     }
 
-    private Set<String> findMatches(String pattern){
-        Set<String> results = new HashSet<>();
+    private TreeSet<String> findMatches(String pattern){
+        TreeSet<String> results = new TreeSet<>();
         Pattern curPattern;
         curPattern = Pattern.compile(pattern);
         for(String word : words){
